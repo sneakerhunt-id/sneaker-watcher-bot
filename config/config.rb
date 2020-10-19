@@ -1,6 +1,6 @@
 require 'redis'
 
-module AtmosIdBot
+module SneakerWatcherBot
   def self.redis
     @redis ||= Redis.new(
       host: ENV['REDIS_HOST'], 
