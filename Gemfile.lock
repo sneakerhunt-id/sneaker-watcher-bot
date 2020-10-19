@@ -44,7 +44,9 @@ GEM
     pry (0.13.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
+    rake (13.0.1)
     redis (4.2.2)
+    require_all (3.0.0)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
       http-cookie (>= 1.0.2, < 2.0)
@@ -80,7 +82,9 @@ DEPENDENCIES
   dotenv
   nokogiri
   pry
+  rake
   redis
+  require_all
   rest-client
   selenium-webdriver
   telegram-bot-ruby

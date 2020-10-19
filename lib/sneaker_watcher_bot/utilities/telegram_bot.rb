@@ -1,0 +1,28 @@
+class TelegramBot
+  def initialize
+    @token = ENV['TELEGRAM_BOT_TOKEN']
+    @chat_id = ENV['TELEGRAM_CHAT_ID']
+  end
+
+  def send_telegram_message(text)
+    Telegram::Bot::Client.run(@token) do |bot|
+      bot.api.send_message(
+        chat_id: @chat_id,
+        text: text,
+        parse_mode: "markdown",
+        disable_web_page_preview: true
+      )
+    end
+  end
+  
+  def send_telegram_photo(text, image_url)
+    Telegram::Bot::Client.run(@token) do |bot|
+      bot.api.send_photo(
+        chat_id: @chat_id,
+        photo: image_url,
+        caption: text,
+        parse_mode: "markdown"
+      )
+    end
+  end
+end
