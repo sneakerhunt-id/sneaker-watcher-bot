@@ -3,8 +3,8 @@
 source 'https://rubygems.org'
 
 gem 'dotenv'
-gem 'selenium-webdriver'
-gem 'test-unit'
+gem "watir", "~> 6.15"
+gem 'webdrivers', '~> 4.0', require: false
 gem 'nokogiri'
 gem 'rake'
 gem 'redis'
