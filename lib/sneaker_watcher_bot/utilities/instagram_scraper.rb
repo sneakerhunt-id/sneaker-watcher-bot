@@ -41,15 +41,4 @@ class InstagramScraper
       raw_stories_data.dig(:data, :reels_media)&.first&.dig(:items) || []
     end
   end
-  
-  def send_telegram_photo(text, image_url)
-    Telegram::Bot::Client.run(@token) do |bot|
-      bot.api.send_photo(
-        chat_id: @chat_id,
-        photo: image_url,
-        caption: text,
-        parse_mode: "markdown"
-      )
-    end
-  end
 end
