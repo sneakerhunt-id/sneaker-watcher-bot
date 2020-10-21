@@ -32,7 +32,7 @@ module Service
           latest_instagram_story_cache = SneakerWatcherBot.redis.get(redis_key(story_hash[:id]))
           return true if latest_instagram_story_cache.blank?
           previous_hash = JSON.parse(latest_instagram_story_cache).deep_symbolize_keys
-          previous_hash != story_hash
+          previous_hash.except(:image) != story_hash.except(:image)
         end
 
         private
