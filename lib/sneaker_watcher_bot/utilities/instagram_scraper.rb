@@ -23,7 +23,7 @@ class InstagramScraper
       Watir::Wait.until { @browser.text.include? 'INSTAGRAM FROM FACEBOOK' }
       @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
       Watir::Wait.until { @browser.text.include? 'logging_page_id' }
-      profile = JSON.parse(@browser.text).symbolize_keys
+      profile = JSON.parse(@browser.text).deep_symbolize_keys
       reel_id = profile[:logging_page_id].split('_')[1]
       variables = {
         reel_ids: [reel_id],

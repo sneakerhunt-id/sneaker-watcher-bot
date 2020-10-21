@@ -20,7 +20,7 @@ module Service
           @is_new_product ||= begin
             latest_product_new_arrival_cache = SneakerWatcherBot.redis.get(redis_key)
             return true if latest_product_new_arrival_cache.blank?
-            previous_hash = JSON.parse(latest_product_new_arrival_cache).symbolize_keys
+            previous_hash = JSON.parse(latest_product_new_arrival_cache).deep_symbolize_keys
             previous_hash != new_hash
           end
         end
