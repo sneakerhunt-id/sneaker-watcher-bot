@@ -18,7 +18,9 @@ module Service
               url: story[:story_cta_url]
             }
             if is_new_story?(story_hash)
-              SneakerWatcherBot.redis.setex(redis_key(story_hash[:id]), redis_expiry.to_i, story_hash.to_json)
+              key = redis_key(story_hash[:id])
+              SneakerWatcherBot.redis.set(key, story_hash.to_json)
+              SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
               message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
                 "[CHECK IT OUT!](#{story_hash[:url]})"
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
