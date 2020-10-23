@@ -1,6 +1,6 @@
 module Service
   module Scraper
-    module HoopsPoint
+    module Atmos
       class DetectInstagramStoryCta < Base
         def call
           stories = InstagramScraper.new.get_stories(instagram_username)
@@ -15,7 +15,7 @@ module Service
               key = redis_key(story_hash[:id])
               SneakerWatcherBot.redis.set(key, story_hash.to_json)
               SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
-              message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
+              message = "*ATMOS INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
                 "[CHECK IT OUT!](#{story_hash[:url]})"
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
             end
@@ -32,11 +32,11 @@ module Service
         private
 
         def redis_key(identifier)
-          "hoops_point_instagram_story_cta_#{identifier}"
+          "atmos_instagram_story_cta_#{identifier}"
         end
 
         def instagram_username
-          ENV['HOOPS_POINT_INSTAGRAM_USERNAME']
+          ENV['ATMOS_INSTAGRAM_USERNAME']
         end
 
         def redis_expiry
