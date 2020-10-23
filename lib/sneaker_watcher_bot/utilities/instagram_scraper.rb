@@ -12,20 +12,9 @@ class InstagramScraper
   end
 
   def get_stories(target_username)
-    # login
-    @browser.goto "#{INSTAGRAM_BASE_URL}/accounts/login/?force_classic_login"
-    @browser.text_field(id: 'id_username').set @username
-    @browser.text_field(id: 'id_enc_password').set @password
-    @browser.button(type: 'submit').click
-    
-    # get stories data
-    Watir::Wait.until { @browser.text.include? 'INSTAGRAM FROM FACEBOOK' }
-    @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
-    Watir::Wait.until { @browser.text.include? 'logging_page_id' }
-    profile = JSON.parse(@browser.text).deep_symbolize_keys
-    reel_id = profile[:logging_page_id].split('_')[1]
+    cookies = get_cookies
     variables = {
-      reel_ids: [reel_id],
+      reel_ids: [reel_id(target_username)],
       tag_names: [],
       location_ids: [],
       highlight_reel_ids: [],
@@ -34,11 +23,72 @@ class InstagramScraper
       story_viewer_fetch_count: 50,
       stories_video_dash_manifest: false
     }
-    @browser.goto "#{INSTAGRAM_BASE_URL}/graphql/query/?query_hash=c9c56db64beb4c9dea2d17740d0259d9&variables=#{variables.to_json}"
-    Watir::Wait.until { @browser.text.include? 'reels_media' }
-    raw_stories_data = JSON.parse(@browser.text).deep_symbolize_keys
+    # get stories data
+    url = "#{INSTAGRAM_BASE_URL}/graphql/query/?query_hash=c9c56db64beb4c9dea2d17740d0259d9&variables=#{variables.to_json}"
+    response = RestClient.get(url, cookies: cookies)
+    raw_stories_data = JSON.parse(response.body).deep_symbolize_keys
     stories = raw_stories_data.dig(:data, :reels_media)&.first&.dig(:items) || []
     @browser.close
     stories
+  end
+
+  private
+
+  def get_cookies
+    key = redis_instagram_cookies_key(@username)
+    raw_cookies = SneakerWatcherBot.redis.get(key)
+    return JSON.parse(raw_cookies).deep_symbolize_keys if raw_cookies.present?
+    # cookies expired
+    # do relogin to get latest cookies
+    relogin
+    cookie_hash = parse_cookies_from_watir_browser
+    SneakerWatcherBot.redis.set(key, cookie_hash.to_json)
+    SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
+    cookie_hash
+  end
+
+  def reel_id(target_username)
+    key = redis_instagram_reel_id(target_username)
+    reel_id = SneakerWatcherBot.redis.get(key)
+    return reel_id if reel_id.present?
+    # get reel_id needed to get stories
+    relogin
+    @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
+    Watir::Wait.until { @browser.text.include? 'logging_page_id' }
+    profile = JSON.parse(@browser.text).deep_symbolize_keys
+    reel_id = profile[:logging_page_id].split('_')[1]
+    SneakerWatcherBot.redis.set(key, reel_id)
+    SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
+    reel_id
+  end
+
+  def relogin
+    # do re-login to get cookies
+    return if @logged_in
+    @browser.goto "#{INSTAGRAM_BASE_URL}/accounts/login/?force_classic_login"
+    @browser.text_field(id: 'id_username').set @username
+    @browser.text_field(id: 'id_enc_password').set @password
+    @browser.button(type: 'submit').click
+    Watir::Wait.until { @browser.text.include? 'INSTAGRAM FROM FACEBOOK' }
+    @logged_in = true
+  end
+
+  def parse_cookies_from_watir_browser
+    latest_cookies = @browser.cookies.to_a
+    latest_cookies.each_with_object({}) do |cookie, cookie_hash|
+      cookie_hash[cookie[:name].to_sym] = cookie[:value]
+    end
+  end
+
+  def redis_instagram_cookies_key(username)
+    "instagram_cookies_#{username}"
+  end
+
+  def redis_instagram_reel_id(target_username)
+    "instagram_reel_id_#{target_username}"
+  end
+
+  def redis_expiry
+    Time.now + 4.hours
   end
 end
