@@ -49,7 +49,7 @@ module Service
               additional_message += "\n\nAVAILABLE SIZE:"
               sizes.each do |size|
                 next if size[:Quantity] == 0
-                additional_message += "\n#{size[:Value].to_i} - #{size[:Quantity].to_i} PCS"
+                additional_message += "\n#{size[:Value]} - #{size[:Quantity].to_i} PCS"
               end
             end
           rescue
