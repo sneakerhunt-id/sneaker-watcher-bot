@@ -11,8 +11,8 @@ module Service
           if is_new_product?(new_hash)
             SneakerWatcherBot.redis.set(redis_key, new_hash.to_json)
             message = "*ATMOS NEW ARRIVAL UPDATE DETECTED!*\n"\
-            "#{new_hash[:name]}\n"
-            "[CHECK IT OUT!](#{@atmos_base_url}#{new_hash[:url]})"
+              "#{new_hash[:name]}\n"\
+              "[CHECK IT OUT!](#{@atmos_base_url}#{new_hash[:url]})"
             TelegramBot.new.send_telegram_photo(message, new_hash[:image])
           end
         end
