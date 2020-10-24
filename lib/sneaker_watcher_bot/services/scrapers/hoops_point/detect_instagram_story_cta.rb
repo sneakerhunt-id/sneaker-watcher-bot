@@ -17,6 +17,7 @@ module Service
               SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
               message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
                 "[CHECK IT OUT!](#{story_hash[:url]})"
+              message += append_additional_info(story_hash[:url])
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
             end
           end
@@ -30,6 +31,32 @@ module Service
         end
 
         private
+
+        def append_additional_info(url)
+          return unless url =~ /\/store\/product/
+          additional_message = ""
+          begin
+            url = url.sub('store','api').sub('product', 'products')
+            response = RestClient.get(url)
+            if response.code == 200 && !response.body.blank? && response.body != 'null'
+              raw_product_data = JSON.parse(response.body).deep_symbolize_keys
+              product_name = raw_product_data.dig(:Products, :Name)
+              additional_message += "\n#{product_name}" if product_name.present?
+              sizes = raw_product_data[:Options].select do |o| 
+                o[:Title].downcase.gsub(/[^0-9a-z ]/i, '') == 'size'
+              end.first[:Options]
+              return additional_message if sizes.blank?
+              additional_message += "\n\nAVAILABLE SIZE:"
+              sizes.each do |size|
+                next if size[:Quantity] == 0
+                additional_message += "\n#{size[:Value]} - #{size[:Quantity].to_i} PCS"
+              end
+            end
+          rescue
+            # do nothing because it is not mandatory
+          end
+          additional_message
+        end
 
         def redis_key(identifier)
           "hoops_point_instagram_story_cta_#{identifier}"
