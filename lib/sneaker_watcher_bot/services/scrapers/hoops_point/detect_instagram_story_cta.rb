@@ -13,12 +13,12 @@ module Service
             }
             if is_new_story?(story_hash)
               key = redis_key(story_hash[:id])
-              SneakerWatcherBot.redis.set(key, story_hash.to_json)
-              SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
               message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
                 "[CHECK IT OUT!](#{story_hash[:url]})"
-              message += append_additional_info(story_hash[:url])
+              message += append_additional_info(story_hash[:url]).to_s
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
+              SneakerWatcherBot.redis.set(key, story_hash.to_json)
+              SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
             end
           end
         end
@@ -33,8 +33,8 @@ module Service
         private
 
         def append_additional_info(url)
-          return unless url =~ /\/store\/product/
           additional_message = ""
+          return additional_message unless url =~ /\/store\/product/
           begin
             url = url.sub('store','api').sub('product', 'products')
             response = RestClient.get(url)
