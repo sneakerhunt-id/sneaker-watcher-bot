@@ -15,7 +15,7 @@ module Service
               key = redis_key(story_hash[:id])
               message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
                 "[CHECK IT OUT!](#{story_hash[:url]})"
-              message += append_additional_info(story_hash[:url])
+              message += append_additional_info(story_hash[:url]).to_s
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
               SneakerWatcherBot.redis.set(key, story_hash.to_json)
               SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
