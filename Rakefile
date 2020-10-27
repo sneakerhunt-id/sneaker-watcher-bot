@@ -6,12 +6,26 @@ require './lib/sneaker_watcher_bot'
 namespace :sneaker_watcher_bot do
   desc 'task to execute all scrapers to detect change'
   task :scrapers_detect_change do
-    # fork process for better concurrencies
-    children = []
-
+    watir_classes =[]
     Service::Scraper::Base.descendants.each do |scraper_class|
-      children << fork do
+      # watir classes process cannot be forked and need to
+      # be separated into another single fork
+      # is this a bug (?)
+      # https://groups.google.com/u/1/g/selenium-users/c/aMmNM7FamWg/m/oMqen9iDAAAJ
+      if scraper_class.name.downcase =~ /instagram/
+        watir_classes << scraper_class
+        next
+      end
+
+      # using fork process for better concurrencies
+      fork do
         scraper_class.call
+      end
+    end
+
+    fork do
+      watir_classes.each do |watir_class|
+        watir_class.call
       end
     end
 
