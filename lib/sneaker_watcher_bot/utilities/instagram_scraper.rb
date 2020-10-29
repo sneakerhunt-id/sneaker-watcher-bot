@@ -89,6 +89,6 @@ class InstagramScraper
   end
 
   def redis_expiry
-    Time.now + 4.hours
+    Time.now + 24.hours
   end
 end
