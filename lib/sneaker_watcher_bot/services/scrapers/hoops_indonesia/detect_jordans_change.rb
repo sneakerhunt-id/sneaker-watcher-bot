@@ -9,7 +9,7 @@ module Service
           if !new_hash.blank? && is_new_product?(new_hash)
             message = "*HOOPS INDONESIA JORDANS UPDATE DETECTED!*\n"\
               "#{new_hash[:name]}\n"\
-              "[CHECK IT OUT!](#{base_url}#{new_hash[:url]})"
+              "[CHECK IT OUT!](#{new_hash[:url]})"
             TelegramBot.new.send_telegram_photo(message, new_hash[:image])
             SneakerWatcherBot.redis.set(redis_key, new_hash.to_json)
           end
