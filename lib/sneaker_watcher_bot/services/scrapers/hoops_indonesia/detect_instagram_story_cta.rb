@@ -5,7 +5,7 @@ module Service
         def call
           stories = InstagramScraper.new.get_stories(instagram_username)
           stories.each do |story|
-            next if story.dig(:story_cta_url).nil?
+            next if story.dig(:story_cta_url).nil? || is_base_domain?(story[:story_cta_url])
             story_hash = {
               id: story[:id],
               image: story[:display_url],
