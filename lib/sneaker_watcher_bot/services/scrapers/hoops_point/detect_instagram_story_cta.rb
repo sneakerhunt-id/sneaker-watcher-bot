@@ -46,10 +46,10 @@ module Service
                 o[:Title].downcase.gsub(/[^0-9a-z ]/i, '') == 'size'
               end.first[:Options]
               return additional_message if sizes.blank?
-              additional_message += "\n\nAVAILABLE SIZE:"
+              additional_message += "\n\*AVAILABLE SIZE*:"
               sizes.each do |size|
                 next if size[:Quantity] == 0
-                additional_message += "\n#{size[:Value]} - #{size[:Quantity].to_i} PCS"
+                additional_message += "\n*US #{size[:Value]}* -- #{size[:Quantity].to_i} PCS"
               end
             end
           rescue
