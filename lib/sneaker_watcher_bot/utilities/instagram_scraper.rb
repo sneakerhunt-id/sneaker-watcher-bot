@@ -5,8 +5,7 @@ class InstagramScraper
   INSTAGRAM_BASE_URL = 'https://www.instagram.com'
 
   def initialize
-    @username = ENV['INSTAGRAM_USERNAME']
-    @password = ENV['INSTAGRAM_PASSWORD']
+    set_instagram_account
     Selenium::WebDriver::Chrome.path = ENV['GOOGLE_CHROME_SHIM'] if ENV.fetch('GOOGLE_CHROME_SHIM', nil).present?
     @browser = Watir::Browser.new :chrome, args: %w[--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222]
   end
@@ -51,8 +50,6 @@ class InstagramScraper
     key = redis_instagram_reel_id(target_username)
     reel_id = SneakerWatcherBot.redis.get(key)
     return reel_id if reel_id.present?
-    # get reel_id needed to get stories
-    relogin
     @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
     Watir::Wait.until { @browser.text.include? 'logging_page_id' }
     profile = JSON.parse(@browser.text).deep_symbolize_keys
@@ -60,6 +57,12 @@ class InstagramScraper
     SneakerWatcherBot.redis.set(key, reel_id)
     SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
     reel_id
+  end
+
+  def set_instagram_account
+    # randomize from a pool of instagram accounts
+    account = ENV['INSTAGRAM_ACCOUNTS'].split(',').map(&:strip).compact.sample
+    @username, @password = account.split(':')
   end
 
   def relogin
@@ -89,6 +92,6 @@ class InstagramScraper
   end
 
   def redis_expiry
-    Time.now + 24.hours
+    Time.now + (ENV['INSTAGRAM_CACHE_EXPIRY'] || 12).to_i.hours
   end
 end
