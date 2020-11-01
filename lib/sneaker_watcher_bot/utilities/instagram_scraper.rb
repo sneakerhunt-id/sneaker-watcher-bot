@@ -13,7 +13,7 @@ class InstagramScraper
   def get_stories(target_username)
     cookies = get_cookies
     variables = {
-      reel_ids: [reel_id(target_username)],
+      reel_ids: [reel_id(target_username, cookies)],
       tag_names: [],
       location_ids: [],
       highlight_reel_ids: [],
@@ -46,13 +46,13 @@ class InstagramScraper
     cookie_hash
   end
 
-  def reel_id(target_username)
+  def reel_id(target_username, cookies)
     key = redis_instagram_reel_id(target_username)
     reel_id = SneakerWatcherBot.redis.get(key)
     return reel_id if reel_id.present?
-    @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
-    Watir::Wait.until { @browser.text.include? 'logging_page_id' }
-    profile = JSON.parse(@browser.text).deep_symbolize_keys
+    url = "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
+    response = RestClient.get(url, cookies: cookies)
+    profile = JSON.parse(response.body).deep_symbolize_keys
     reel_id = profile[:logging_page_id].split('_')[1]
     SneakerWatcherBot.redis.set(key, reel_id)
     SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
