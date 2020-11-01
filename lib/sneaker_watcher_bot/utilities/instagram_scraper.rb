@@ -50,8 +50,6 @@ class InstagramScraper
     key = redis_instagram_reel_id(target_username)
     reel_id = SneakerWatcherBot.redis.get(key)
     return reel_id if reel_id.present?
-    # get reel_id needed to get stories
-    relogin
     @browser.goto "#{INSTAGRAM_BASE_URL}/#{target_username}/?__a=1"
     Watir::Wait.until { @browser.text.include? 'logging_page_id' }
     profile = JSON.parse(@browser.text).deep_symbolize_keys
@@ -62,7 +60,7 @@ class InstagramScraper
   end
 
   def set_instagram_account
-    # from pool of instagram account
+    # randomize from a pool of instagram accounts
     account = ENV['INSTAGRAM_ACCOUNTS'].split(',').map(&:strip).compact.sample
     @username, @password = account.split(':')
   end
