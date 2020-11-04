@@ -2,7 +2,7 @@ module Service
   module Scraper
     module HoopsPoint
       class DetectJordansChange < Base
-        def call
+        def perform
           response = RestClient.get("#{base_url}/api/products/categories")
           parsed_body = JSON.parse(response.body).map(&:deep_symbolize_keys)
           jordans = parsed_body.select { |c| c[:Slug] == 'jordan-shoes' }.first[:Products]

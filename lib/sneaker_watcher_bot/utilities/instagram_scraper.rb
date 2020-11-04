@@ -63,6 +63,12 @@ class InstagramScraper
     # randomize from a pool of instagram accounts
     account = ENV['INSTAGRAM_ACCOUNTS'].split(',').map(&:strip).compact.sample
     @username, @password = account.split(':')
+    log_object = {
+      tags: self.class.name.underscore,
+      message: "Set instagram scraper account",
+      instagram_username: @username
+    }
+    SneakerWatcherBot.logger.info(log_object)
   end
 
   def relogin

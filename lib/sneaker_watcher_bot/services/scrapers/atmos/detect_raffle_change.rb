@@ -6,7 +6,7 @@ module Service
           @atmos_base_url = ENV['ATMOS_BASE_URL']
         end
 
-        def call
+        def perform
           new_hash = scrape_raffle
           if is_new_product?(new_hash)
             message = "*ATMOS RAFFLE UPDATE DETECTED!*\n"\
