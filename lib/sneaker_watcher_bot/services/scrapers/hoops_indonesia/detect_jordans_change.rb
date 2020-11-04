@@ -4,7 +4,7 @@ module Service
       class DetectJordansChange < Base
         AIR_JORDAN = 'AIR JORDAN'
 
-        def call
+        def perform
           new_hash = scrape_new_jordan
           if !new_hash.blank? && is_new_product?(new_hash)
             message = "*HOOPS INDONESIA JORDANS UPDATE DETECTED!*\n"\

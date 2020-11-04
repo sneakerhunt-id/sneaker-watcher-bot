@@ -2,7 +2,7 @@ module Service
   module Scraper
     module Atmos
       class DetectCollectionsChange < Base
-        def call
+        def perform
           response = RestClient.get("#{base_url}/collections")
           html = Nokogiri::HTML(response.body)
           html.xpath("//*[@id='panel']//div//a//img").each do |img|

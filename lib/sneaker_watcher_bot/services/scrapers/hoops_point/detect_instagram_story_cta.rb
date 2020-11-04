@@ -2,7 +2,7 @@ module Service
   module Scraper
     module HoopsPoint
       class DetectInstagramStoryCta < Base
-        def call
+        def perform
           stories = InstagramScraper.new.get_stories(instagram_username)
           stories.each do |story|
             next if story.dig(:story_cta_url).nil?

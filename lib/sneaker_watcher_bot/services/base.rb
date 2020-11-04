@@ -5,7 +5,17 @@ module Services
     end
 
     def call
-      raise NotImplementedError, 'You must implement `call`.'
+      ::Metric.measure(klass_tag) { perform }
+    end
+
+    def perform
+      raise NotImplementedError, 'You must implement `perform`.'
+    end
+
+    private
+
+    def klass_tag
+      self.class.name.split('::').map(&:underscore)
     end
   end
 end
