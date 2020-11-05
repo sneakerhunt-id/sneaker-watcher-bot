@@ -41,17 +41,6 @@ module Service
           product_hash[:name].blank? || product_hash[:url].blank? || product_hash[:image].blank?
         end
 
-        def raffle?(product_url)
-          is_raffle = product_url =~ /raffle/
-          is_raffle.present?
-        end
-
-        def relevant_product?(product_name)
-          return true if whitelisted_products.blank? # it means no preferences
-          relevancy = product_name.downcase =~ /#{whitelisted_products.join('|')}/
-          relevancy.present?
-        end
-
         def whitelisted_products
           @whitelisted_products ||= ENV['ATMOS_COLLECTIONS_WHITELISTED_PRODUCTS'].split(",")
             .map(&:strip).map(&:downcase).compact
