@@ -78,7 +78,8 @@ class InstagramScraper
     @browser.text_field(id: 'id_username').set @username
     @browser.text_field(id: 'id_enc_password').set @password
     @browser.button(type: 'submit').click
-    Watir::Wait.until { @browser.text.include? 'INSTAGRAM FROM FACEBOOK' }
+    # indicator that we're logged in
+    Watir::Wait.until { @browser.text.upcase.include? 'INSTAGRAM FROM FACEBOOK' }
     @logged_in = true
   end
 
