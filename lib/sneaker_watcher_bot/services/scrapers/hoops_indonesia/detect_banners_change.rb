@@ -52,8 +52,8 @@ module Service
         end
 
         def send_message(product_hash)
-          message = "*HOOPS INDONESIA BANNERS UPDATE DETECTED!*\n"\
-            "[CHECK IT OUT!](#{product_hash[:url]})"
+          message = "<strong>HOOPS INDONESIA BANNERS UPDATE DETECTED!</strong>\n"\
+            "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>"
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
           SneakerWatcherBot.redis.set(redis_key(product_hash[:name]), product_hash.to_json)
         end

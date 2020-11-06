@@ -9,9 +9,9 @@ module Service
         def perform
           new_hash = scrape_raffle
           if is_new_product?(new_hash)
-            message = "*ATMOS RAFFLE UPDATE DETECTED!*\n"\
+            message = "<strong>ATMOS RAFFLE UPDATE DETECTED!</strong>\n"\
               "#{new_hash[:name]}\n"\
-              "[CHECK IT OUT!](#{@atmos_base_url}#{new_hash[:url]})"
+              "<a href='#{@atmos_base_url}#{new_hash[:url]}'>CHECK IT OUT!</a>"
             TelegramBot.new.send_telegram_photo(message, new_hash[:image])
             SneakerWatcherBot.redis.set(redis_key, new_hash.to_json)
           end
