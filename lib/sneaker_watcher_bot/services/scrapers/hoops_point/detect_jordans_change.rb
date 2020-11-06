@@ -57,13 +57,13 @@ module Service
         end
 
         def send_message(product_hash, sizes)
-          message = "*HOOPS POINT JORDANS UPDATE DETECTED!*\n"\
+          message = "<strong>HOOPS POINT JORDANS UPDATE DETECTED!</strong>\n"\
             "#{product_hash[:name]}\n"\
-            "[CHECK IT OUT!](#{product_hash[:url]})"
-          message += "\n\n*AVAILABLE SIZE*:"
+            "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>"
+          message += "\n\n<strong>AVAILABLE SIZE</strong>:"
           sizes.each do |size|
             next if size[:quantity] == 0
-            message += "\n*US #{size[:value]}* -- #{size[:quantity]} PCS"
+            message += "\n<strong>US #{size[:value]}</strong> -- #{size[:quantity]} PCS"
           end
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
           SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)

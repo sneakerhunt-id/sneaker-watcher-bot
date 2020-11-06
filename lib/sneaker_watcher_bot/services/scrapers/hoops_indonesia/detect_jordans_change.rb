@@ -7,9 +7,9 @@ module Service
         def perform
           new_hash = scrape_new_jordan
           if !new_hash.blank? && is_new_product?(new_hash)
-            message = "*HOOPS INDONESIA JORDANS UPDATE DETECTED!*\n"\
+            message = "<strong>HOOPS INDONESIA JORDANS UPDATE DETECTED!</strong>\n"\
               "#{new_hash[:name]}\n"\
-              "[CHECK IT OUT!](#{new_hash[:url]})"
+              "<a href='#{new_hash[:url]}'>CHECK IT OUT!</a>"
             TelegramBot.new.send_telegram_photo(message, new_hash[:image])
             SneakerWatcherBot.redis.set(redis_key, new_hash.to_json)
           end

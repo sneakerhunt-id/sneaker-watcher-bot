@@ -13,8 +13,8 @@ module Service
             }
             if is_new_story?(story_hash)
               key = redis_key(story_hash[:id])
-              message = "*HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
-                "[CHECK IT OUT!](#{story_hash[:url]})"
+              message = "<strong>HOOPS POINT INSTAGRAM STORY ANNOUNCEMENT DETECTED!</strong>\n"\
+                "<a href='#{story_hash[:url]}'>CHECK IT OUT!</a>"
               message += append_additional_info(story_hash[:url]).to_s
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
               SneakerWatcherBot.redis.set(key, story_hash.to_json)
@@ -46,10 +46,10 @@ module Service
                 o[:Title].downcase.gsub(/[^0-9a-z ]/i, '') == 'size'
               end.first[:Options]
               return additional_message if sizes.blank?
-              additional_message += "\n\n*AVAILABLE SIZE*:"
+              additional_message += "\n\n<strong>AVAILABLE SIZE</strong>:"
               sizes.each do |size|
                 next if size[:Quantity] == 0
-                additional_message += "\n*US #{size[:Value]}* -- #{size[:Quantity].to_i} PCS"
+                additional_message += "\n<strong>US #{size[:Value]}</strong> -- #{size[:Quantity].to_i} PCS"
               end
             end
           rescue

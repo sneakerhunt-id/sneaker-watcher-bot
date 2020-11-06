@@ -13,8 +13,8 @@ module Service
             }
             if is_new_story?(story_hash)
               key = redis_key(story_hash[:id])
-              message = "*HOOPS INDONESIA INSTAGRAM STORY ANNOUNCEMENT DETECTED!*\n"\
-                "[CHECK IT OUT!](#{story_hash[:url]})"
+              message = "<strong>HOOPS INDONESIA INSTAGRAM STORY ANNOUNCEMENT DETECTED!</strong>\n"\
+                "<a href='#{story_hash[:url]}'>CHECK IT OUT!</a>"
               message += append_additional_info(story_hash[:url]).to_s
               TelegramBot.new.send_telegram_photo(message, story_hash[:image])
               SneakerWatcherBot.redis.set(key, story_hash.to_json)
