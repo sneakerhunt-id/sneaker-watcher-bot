@@ -3,7 +3,7 @@ module Service
     module HoopsPoint
       class DetectInstagramStoryCta < Base
         def self.interval_seconds
-          20
+          15
         end
 
         def perform
