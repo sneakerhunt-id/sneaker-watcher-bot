@@ -7,7 +7,6 @@ class Metric
         yield
       rescue StandardError => e
         status = 'fail'
-        raise e
       ensure
         duration = Time.now - start_time
         log_object = {

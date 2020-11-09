@@ -11,24 +11,35 @@ class InstagramScraper
   end
 
   def get_stories(target_username)
-    cookies = get_cookies
-    variables = {
-      reel_ids: [reel_id(target_username, cookies)],
-      tag_names: [],
-      location_ids: [],
-      highlight_reel_ids: [],
-      precomposed_overlay: false,
-      show_story_viewer_list: true,
-      story_viewer_fetch_count: 50,
-      stories_video_dash_manifest: false
-    }
-    # get stories data
-    url = "#{INSTAGRAM_BASE_URL}/graphql/query/?query_hash=c9c56db64beb4c9dea2d17740d0259d9&variables=#{variables.to_json}"
-    response = RestClient.get(url, cookies: cookies)
-    raw_stories_data = JSON.parse(response.body).deep_symbolize_keys
-    stories = raw_stories_data.dig(:data, :reels_media)&.first&.dig(:items) || []
-    @browser.close
-    stories
+    begin
+      cookies = get_cookies
+      variables = {
+        reel_ids: [reel_id(target_username, cookies)],
+        tag_names: [],
+        location_ids: [],
+        highlight_reel_ids: [],
+        precomposed_overlay: false,
+        show_story_viewer_list: true,
+        story_viewer_fetch_count: 50,
+        stories_video_dash_manifest: false
+      }
+      # get stories data
+      url = "#{INSTAGRAM_BASE_URL}/graphql/query/?query_hash=c9c56db64beb4c9dea2d17740d0259d9&variables=#{variables.to_json}"
+      response = RestClient.get(url, cookies: cookies)
+      raw_stories_data = JSON.parse(response.body).deep_symbolize_keys
+      stories = raw_stories_data.dig(:data, :reels_media)&.first&.dig(:items) || []
+    rescue StandardError => e
+      log_object = {
+        tags: self.class.name.underscore,
+        message: e.message,
+        backtrace: e.backtrace.take(5),
+        instagram_username: @username
+      }
+      SneakerWatcherBot.logger.error(log_object)
+      raise
+    ensure
+      @browser.close
+    end
   end
 
   private
