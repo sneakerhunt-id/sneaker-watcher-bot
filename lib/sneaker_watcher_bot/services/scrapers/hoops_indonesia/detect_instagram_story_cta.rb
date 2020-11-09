@@ -2,6 +2,10 @@ module Service
   module Scraper
     module HoopsIndonesia
       class DetectInstagramStoryCta < Base
+        def self.interval_seconds
+          20
+        end
+
         def perform
           stories = InstagramScraper.new.get_stories(instagram_username)
           stories.each do |story|
