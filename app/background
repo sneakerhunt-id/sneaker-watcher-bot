@@ -27,3 +27,5 @@ fork do
     watir_classes.each { |watir_class| watir_class.call }
   end
 end
+
+Process.waitall
