@@ -9,6 +9,10 @@ module Services
       (ENV['DEFAULT_SCRAPER_INTERVAL_SECONDS'] || 30).to_i
     end
 
+    def self.klass_tag
+      self.name.split('::').map(&:underscore)
+    end
+
     def call
       ::Metric.measure(klass_tag) { perform }
     end
