@@ -2,6 +2,10 @@ module Service
   module Scraper
     module Atmos
       class DetectCollectionsChange < Base
+        def self.interval_seconds
+          15
+        end
+
         def perform
           response = RestClient.get("#{base_url}/collections")
           html = Nokogiri::HTML(response.body)

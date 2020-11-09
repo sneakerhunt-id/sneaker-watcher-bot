@@ -2,6 +2,10 @@ module Service
   module Scraper
     module Atmos
       class DetectRaffleChange < Base
+        def self.interval_seconds
+          60
+        end
+
         def initialize
           @atmos_base_url = ENV['ATMOS_BASE_URL']
         end
