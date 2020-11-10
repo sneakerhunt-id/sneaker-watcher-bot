@@ -44,7 +44,7 @@ module Service
           sizes.each_with_object([]) do |size, available|
             next if size[:quantity] == 0
             available << {
-              value: size[:size].to_i,
+              value: size[:size],
               quantity: size[:quantity].to_i
             }
           end
@@ -67,7 +67,7 @@ module Service
             "#{product_hash[:name]}\n"\
             "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>"
           message += "\n\n<strong>AVAILABLE SIZE</strong>:"
-          sizes.sort_by! { |s| s[:value]}
+          # sizes.sort_by! { |s| s[:value]}
           sizes.each do |size|
             next if size[:quantity] == 0
             message += "\n<strong>US #{size[:value]}</strong> -- #{size[:quantity]} PCS"
