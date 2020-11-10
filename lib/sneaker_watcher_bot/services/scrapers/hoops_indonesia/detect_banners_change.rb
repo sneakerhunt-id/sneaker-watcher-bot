@@ -3,6 +3,7 @@ module Service
     module HoopsIndonesia
       class DetectBannersChange < Base
         def perform
+          return
           response = RestClient.get("#{base_url}")
           html = Nokogiri::HTML(response.body)
           html.xpath("//*[@id='pos-slideshow-home']//a//img").each do |img|
