@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require './lib/sneaker_watcher_bot'
+
+Service::Scraper::HoopsPoint.subclasses.each do |scraper_class|
+  # using fork process for better concurrencies
+  fork do
+    interval_seconds = scraper_class.interval_seconds
+    background_name = scraper_class.klass_tag.join('_')
+    EndlessLoop.perform(interval_seconds, background_name) { scraper_class.call }
+  end
+end
+
+Process.waitall
