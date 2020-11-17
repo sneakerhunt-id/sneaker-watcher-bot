@@ -1,7 +1,7 @@
 class TelegramBot
-  def initialize
-    @token = ENV['TELEGRAM_BOT_TOKEN']
-    @chat_id = ENV['TELEGRAM_CHAT_ID']
+  def initialize(chat_id = ENV['TELEGRAM_CHAT_ID'], token = ENV['TELEGRAM_BOT_TOKEN'])
+    @chat_id = chat_id
+    @token = token
   end
 
   def send_telegram_message(text, parse_mode = 'HTML')

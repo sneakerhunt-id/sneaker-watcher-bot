@@ -36,6 +36,7 @@ class InstagramScraper
         instagram_username: @username
       }
       SneakerWatcherBot.logger.error(log_object)
+      send_error_notification(e)
       raise
     ensure
       @browser.close
@@ -43,6 +44,19 @@ class InstagramScraper
   end
 
   private
+
+  def send_error_notification(error)
+    key = "instagram_error_#{@username}"
+    cached_error = SneakerWatcherBot.redis.get(key)
+    if cached_error.nil?
+      error_expiry = Time.now + 30.minutes
+      message = "#{@username}:#{@password} instagram scraping error\n"\
+        "Error message: #{error.message}"
+      TelegramBot.new(ENV['TELEGRAM_PRODUCTION_SUPPORT_CHAT_ID']).send_telegram_message(message)
+      SneakerWatcherBot.redis.set(key, message)
+      SneakerWatcherBot.redis.expireat(key, error_expiry.to_i)
+    end
+  end
 
   def get_cookies
     key = redis_instagram_cookies_key(@username)
