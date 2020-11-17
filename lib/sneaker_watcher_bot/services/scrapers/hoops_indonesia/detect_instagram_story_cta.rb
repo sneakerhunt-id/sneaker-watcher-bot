@@ -3,7 +3,7 @@ module Service
     module HoopsIndonesia
       class DetectInstagramStoryCta < Base
         def self.interval_seconds
-          15
+          (ENV['HOOPS_INDONESIA_INSTAGRAM_STORY_INTERVAL_SECONDS'] || 30).to_i
         end
 
         def perform
