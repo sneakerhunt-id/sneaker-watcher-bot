@@ -13,6 +13,7 @@ module Service
             product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
             product_release_time = product.dig(:productInfo)&.first&.dig(:launchView, :startEntryDate)
             product_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
+            product_out_of_stock = product.dig(:productInfo)&.first&.dig(:productContent, :outOfStock).present?
             product_url = "#{web_base_url}/t/#{product_slug}"
             product_sizes = []
             product.dig(:productInfo)&.first&.dig(:skus)&.each do |sku|
@@ -25,9 +26,11 @@ module Service
               }
             end
 
-            next if product_img.blank? ||
+            next if product_out_of_stock ||
+              product_img.blank? ||
               product_name.blank? ||
               product_release_time.blank? ||
+              past_release?(product_release_time) ||
               !new_product?(product_slug)
             product_hash = {
               id: product_id,
@@ -43,6 +46,10 @@ module Service
         end
 
         private
+
+        def past_release?(product_release_time)
+          Time.parse(product_release_time) < Time.now
+        end
 
         def request_headers
           filters = %w[
