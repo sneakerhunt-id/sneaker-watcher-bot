@@ -111,7 +111,7 @@ module Service
 
         def send_message(product_hash)
           message = "<strong>NIKE SNKRS UPDATE DETECTED!</strong>\n"\
-            "NAME:\n#{product_hash[:name]}\n"\
+            "#{product_hash[:name]}\n"\
             "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>\n\n"\
             "RELEASE TIME:\n#{Time.parse(product_hash[:release_time]).in_time_zone("Jakarta").strftime('%d %B %Y at %H:%M WIB')}\n\n"\
             "EARLY CHECKOUT LINK WILL BE PROVIDED #{ENV.fetch('NIKE_SNKRS_REMINDER_HOUR', 2)} HOURS PRIOR TO RELEASE!"
