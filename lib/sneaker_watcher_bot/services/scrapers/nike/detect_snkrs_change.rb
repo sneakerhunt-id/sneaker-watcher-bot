@@ -2,6 +2,10 @@ module Service
   module Scraper
     module Nike
       class DetectSnkrsChange < Base
+        def self.interval_seconds
+          600
+        end
+
         def perform
           response = RestClient.get("#{api_base_url}/product_feed/threads/v2", request_headers)
           parsed_body = JSON.parse(response.body).deep_symbolize_keys
@@ -105,11 +109,11 @@ module Service
         end
 
         def send_message(product_hash)
-          message = "<strong>NIKE SNEAKERS UPDATE DETECTED!</strong>\n"\
+          message = "<strong>NIKE SNKRS UPDATE DETECTED!</strong>\n"\
             "NAME:\n#{product_hash[:name]}\n"\
             "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>\n\n"\
             "RELEASE TIME:\n#{Time.parse(product_hash[:release_time]).in_time_zone("Jakarta").strftime('%d %B %Y at %H:%M WIB')}\n\n"\
-            "EARLY CHECKOUT LINK WILL BE PROVIDED 1 HOUR PRIOR TO RELEASE!"
+            "EARLY CHECKOUT LINK WILL BE PROVIDED #{ENV.fetch('NIKE_SNKRS_REMINDER_HOUR', 2)} HOURS PRIOR TO RELEASE!"
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
           SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)
         end
