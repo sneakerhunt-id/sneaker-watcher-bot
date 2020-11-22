@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require './lib/sneaker_watcher_bot'
+
+watir_classes =[]
+Service::Scraper::Base.descendants.each do |scraper_class|
+  # watir classes process cannot be forked and need to
+  # be separated into one single process
+  # is this a bug (?)
+  # https://groups.google.com/u/1/g/selenium-users/c/aMmNM7FamWg/m/oMqen9iDAAAJ
+  if scraper_class.name.downcase =~ /instagram/
+    watir_classes << scraper_class
+  end
+end
+
+fork do
+  interval_seconds = watir_classes.first.interval_seconds
+  EndlessLoop.perform(interval_seconds, "instagram_stories_scraper") do
+    watir_classes.each { |watir_class| watir_class.call }
+  end
+end
+
+Process.waitall
