@@ -107,7 +107,7 @@ module Service
         end
 
         def redis_key(identifier)
-          "nike_snkrs_#{identifier.downcase}"
+          "nike_snkrs_web_#{identifier.downcase}"
         end
 
         def api_base_url
