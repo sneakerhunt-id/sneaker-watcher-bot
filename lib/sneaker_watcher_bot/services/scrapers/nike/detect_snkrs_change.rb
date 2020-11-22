@@ -16,24 +16,32 @@ module Service
             product_out_of_stock = product.dig(:productInfo)&.first&.dig(:productContent, :outOfStock).present?
             product_url = "#{web_base_url}/t/#{product_slug}"
             product_sizes = []
-            product.dig(:productInfo)&.first&.dig(:skus)&.each do |sku|
-              size = sku.dig(:countrySpecifications)&.first
-              nike_size = sku.dig(:nikeSize)
-              next if nike_size.nil?
-              product_sizes << {
-                size: nike_size,
-                description: "#{size.dig(:localizedSizePrefix)} #{size.dig(:localizedSize)}"
-              }
+            index = 1
+            product.dig(:productInfo)&.each do |product_info|
+              product_id = product_info.dig(:launchView, :productId)
+              next if product_id.nil?
+              product_info.dig(:skus)&.each do |sku|
+                size = sku.dig(:countrySpecifications)&.first
+                nike_size = sku.dig(:nikeSize)
+                next if nike_size.nil?
+                product_sizes << {
+                  index: index,
+                  id: product_id,
+                  size: nike_size,
+                  description: "#{size.dig(:localizedSizePrefix)} #{size.dig(:localizedSize)}"
+                }
+                index += 1
+              end
             end
 
             next if product_out_of_stock ||
               product_img.blank? ||
               product_name.blank? ||
               product_release_time.blank? ||
+              product_sizes.blank? ||
               past_release?(product_release_time) ||
               !new_product?(product_slug)
             product_hash = {
-              id: product_id,
               name: product_name,
               slug: product_slug,
               url: product_url,
