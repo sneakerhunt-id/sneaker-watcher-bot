@@ -3,6 +3,48 @@ module Service
     module Nike
       class DetectSnkrsChange < Base
         def perform
+          response = RestClient.get("#{api_base_url}/product_feed/threads/v2", request_headers)
+          parsed_body = JSON.parse(response.body).deep_symbolize_keys
+          products = parsed_body.dig(:objects)
+          products&.each do |product|
+            product_properties = product.dig(:publishedContent, :nodes)&.first&.dig(:properties)
+            product_id = product_properties.dig(:actions)&.find {|a| a[:actionType] == 'cta_buying_tools'}&.dig(:product, :productId)
+            product_name = "#{product_properties[:subtitle]} #{product_properties[:title]}"
+            product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
+            product_release_time = product.dig(:productInfo)&.first&.dig(:launchView, :startEntryDate)
+            product_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
+            product_url = "#{web_base_url}/t/#{product_slug}"
+            product_sizes = []
+            product.dig(:productInfo)&.first&.dig(:skus)&.each do |sku|
+              size = sku.dig(:countrySpecifications)&.first
+              nike_size = sku.dig(:nikeSize)
+              next if nike_size.nil?
+              product_sizes << {
+                size: nike_size,
+                description: "#{size.dig(:localizedSizePrefix)} #{size.dig(:localizedSize)}"
+              }
+            end
+
+            next if product_img.blank? ||
+              product_name.blank? ||
+              product_release_time.blank? ||
+              !new_product?(product_slug)
+            product_hash = {
+              id: product_id,
+              name: product_name,
+              slug: product_slug,
+              url: product_url,
+              image: product_img,
+              release_time: product_release_time,
+              sizes: product_sizes
+            }
+            send_message(product_hash)
+          end
+        end
+
+        private
+
+        def request_headers
           filters = %w[
             marketplace(ID)
             language(en-GB)
@@ -22,47 +64,18 @@ module Service
             fields: fields.join(',')
           }
           # TODO: create a user agent strings pool and randomized from there
-          headers = {
+          {
             params: params,
             user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Safari/605.1.15 Version/13.0.4',
             'appid': 'com.nike.commerce.snkrs.web',
             'nike-api-caller-id': 'nike:snkrs:web:1.0'
           }
-          response = RestClient.get("#{base_url}/product_feed/threads/v2", headers)
-          parsed_body = JSON.parse(response.body).deep_symbolize_keys
-          products = parsed_body.dig(:objects)
-          products&.each do |product|
-            product_properties = product.dig(:publishedContent, :nodes)&.first&.dig(:properties)
-            product_name = "#{product_properties[:subtitle]} #{product_properties[:title]}"
-            product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
-            next if product_img.blank? || product_name.blank?
-            TelegramBot.new.send_telegram_photo(product_name, product_img[:image])
-          end
-          # html = Nokogiri::HTML(response.body)
-          # html.css('.product-item-info').each do |product|
-          #   product_name = product.xpath(".//a[contains(@class, 'product-item-link')]").first.inner_text.strip
-          #   product_url = product.xpath(".//a[contains(@class, 'product-item-link')]").first.attributes['href'].value
-          #   product_slug = URI.parse(product_url).path.split('/').last
-          #   product_img = product.xpath(".//img[contains(@class, 'product-image-photo')]").first.attributes['src'].value
-          #   product_hash = {
-          #     slug: product_slug,
-          #     name: product_name,
-          #     url: product_url,
-          #     image: product_img
-          #   }
-          #   next if !relevant_product?(product_name) || # not relevant
-          #     !new_product?(product_slug) # not a new product
-
-          #   send_message(product_hash)
-          # end
         end
 
-        private
-
-        def whitelisted_products
-          @whitelisted_products ||= ENV['OUR_DAILY_DOSE_BASE_LATEST_WHITELISTED_PRODUCTS'].split(",")
-            .map(&:strip).map(&:downcase).compact
-        end
+        # def whitelisted_products
+        #   @whitelisted_products ||= ENV['OUR_DAILY_DOSE_BASE_LATEST_WHITELISTED_PRODUCTS'].split(",")
+        #     .map(&:strip).map(&:downcase).compact
+        # end
 
         def new_product?(identifier)
           key = redis_key(identifier)
@@ -77,9 +90,11 @@ module Service
         end
 
         def send_message(product_hash)
-          message = "<strong>OUR DAILY DOSE LATEST UPDATE DETECTED!</strong>\n"\
-            "#{product_hash[:name]}\n"\
-            "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>"
+          message = "<strong>NIKE SNEAKERS UPDATE DETECTED!</strong>\n"\
+            "NAME:\n#{product_hash[:name]}\n"\
+            "<a href='#{product_hash[:url]}'>CHECK IT OUT!</a>\n\n"\
+            "RELEASE TIME:\n#{Time.parse(product_hash[:release_time]).in_time_zone("Jakarta").strftime('%d %B %Y at %H:%M WIB')}\n\n"\
+            "EARLY CHECKOUT LINK WILL BE PROVIDED 1 HOUR PRIOR TO RELEASE!"
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
           SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)
         end
@@ -88,8 +103,12 @@ module Service
           "nike_snkrs_#{identifier.downcase}"
         end
 
-        def base_url
+        def api_base_url
           ENV['NIKE_SNKRS_API_BASE_URL']
+        end
+
+        def web_base_url
+          ENV['NIKE_SNKRS_WEB_BASE_URL']
         end
       end
     end
