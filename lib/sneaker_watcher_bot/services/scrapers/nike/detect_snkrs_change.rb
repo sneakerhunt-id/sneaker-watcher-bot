@@ -41,6 +41,7 @@ module Service
             next if product_out_of_stock ||
               product_img.blank? ||
               product_name.blank? ||
+              !relevant_product?(product_name) ||
               product_release_time.blank? ||
               product_sizes.blank? ||
               past_release?(product_release_time) ||
@@ -91,10 +92,10 @@ module Service
           }
         end
 
-        # def whitelisted_products
-        #   @whitelisted_products ||= ENV['OUR_DAILY_DOSE_BASE_LATEST_WHITELISTED_PRODUCTS'].split(",")
-        #     .map(&:strip).map(&:downcase).compact
-        # end
+        def whitelisted_products
+          @whitelisted_products ||= ENV['NIKE_SNKRS_WHITELISTED_PRODUCTS'].split(",")
+            .map(&:strip).map(&:downcase).compact
+        end
 
         def new_product?(identifier)
           key = redis_key(identifier)
