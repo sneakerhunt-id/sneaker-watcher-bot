@@ -8,7 +8,8 @@ module PrivateInstagramApi
     def perform
       begin
         response = RestClient.get("#{base_url}/zr/token/result/", request_headers)
-        response.cookies
+        cookies = response.cookies.deep_symbolize_keys
+        Normalizer::CsrfTokenResponse.new(cookies[:csrftoken], cookies[:mid], device_id, android_id)
       rescue => e
         log_object = {
           tags: self.class.name.underscore,
@@ -50,6 +51,7 @@ module PrivateInstagramApi
     end
   
     def device_id
+      # generate uuid based on username password
       Digest::UUID.uuid_v5(@username, @password)
     end
     
