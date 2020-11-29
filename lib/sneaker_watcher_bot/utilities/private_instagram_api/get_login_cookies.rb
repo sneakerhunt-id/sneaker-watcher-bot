@@ -63,8 +63,26 @@ module PrivateInstagramApi
     end
 
     def request_body
+      signed_body = {
+        jazoest: '22494',
+        country_codes: [{
+          country_code: '1',
+          source: %w[default]
+        }],
+        phone_id: 'e5234c43-f519-4748-9193-ffde9bbeee5e',
+        enc_password: get_enc_password,
+        _csrftoken: @csrf_token_response.csrf_token,
+        username: @username,
+        adid: '',
+        guid: @public_key_response.device_id,
+        device_id: @public_key_response.android_id,
+        google_tokens: [],
+        login_attempt_count: 0
+      }
+      # {:jazoest=>"22494", :country_codes=>"[{\"country_code\":\"1\",\"source\":[\"default\"]}]", :phone_id=>"e5234c43-f519-4748-9193-ffde9bbeee5e", :enc_password=>"#PWD_INSTAGRAM:4:1606487597:AQa0vSKwTB4LexKIuxUAAaJ5wJQ7yIFRzBUYcWmt11S0Ty6WP4MBi3ke1wUxvAR/rLzvu5EMXAOyq++ITJRmfuvpkXsk2pomtHHKNucoZJ9lZ1QeFvW3OexGLFB+MZI9KZOt3pOwsRxjhT0eOFbJDe31QJsakDbo2wa/EbJ0HkTMMaroVVL0GCzzXlWpGCsDO7vJkOV/KwZZ1wgS1R1UAqBngqWrxkYfy6ujfPv1LfkFesreWSq3KKZ1OhFI8/kVZeQnKKYdE9mn/jJyOdmG3uLQ38ydVoDpY8S42PwVwFn8BSMKKY9eqEcxsCuInT5O10H0/q+9uiCkSkh11yQ39Dj1B3QZ//MItUPLfT2iNVzn9vMicoHGfhZtw1HkgCU7WTmam+FzAHBqmaIa",
+      #  :_csrftoken=>"QW0YjrmHXnYuhSfteE6VDfc1UUCmc47u", :username=>"just.a.watcher.69", :adid=>"", :guid=>"18abcabb-8663-4774-85bf-3dddd6d2bd8a", :device_id=>"android-b12551c0f35ad072", :google_tokens=>"[]", :login_attempt_count=>"0"}
       {
-        # signed_bodySIGNATURE.%7B%22jazoest%22%3A%2222326%22%2C%22country_codes%22%3A%22%5B%7B%5C%22country_code%5C%22%3A%5C%221%5C%22%2C%5C%22source%5C%22%3A%5B%5C%22default%5C%22%5D%7D%5D%22%2C%22phone_id%22%3A%225a8198e4-aef7-4204-9121-2d8abc9861a2%22%2C%22enc_password%22%3A%22%23PWD_INSTAGRAM%3A4%3A1606412328%3AAbr37cSm%2Bn4s1cLMdbgAATKznHkIMRhJ2a3rVaPt5lIOCGQSFpfiNuFQ8vgNPWjgb20SXhp1P6i%2BVv55LyUFxD3UW9XFOJapy7z5Pb%2F%2BbnAPC9847Yf46WeGIjWS7U20BQDWtUt%2Bxb34XK0JKU8eEpBHacBcg0rmCGfHTVqZDQJc%2FAO3O5iySGMBikQSUYMY1PjwkoVI1S4kkyMoC2ACEQsD2ElzF43%2BMMCw9cOzszRwXsQcG3ltxt1%2FpF3nIbmai96FDjbrLvRCrUrmKH9TPfqMvsVhAfE6BIIRAVKXQ5abA%2FrNEDUxBLuq6Oq%2BKKJnUb6Q5Bxcpda8Bm4b6sZTryPVMUr%2FRTsga%2BpUc%2FHTGlOj1%2FgARLuYIW8kz6zi%2FK%2BGWOynDdiX77%2BPT0Ef%22%2C%22_csrftoken%22%3A%22ZKroefVz4stGdTgm2ORoS9TsFXD4dDXi%22%2C%22username%22%3A%22just.a.watcher.69%22%2C%22adid%22%3A%22%22%2C%22guid%22%3A%22dcd5c6f0-e663-412d-b69c-5d95ad76f0c1%22%2C%22device_id%22%3A%22android-b12551c0f35ad072%22%2C%22google_tokens%22%3A%22%5B%5D%22%2C%22login_attempt_count%22%3A%221%22%7D
+        signed_body: "SIGNATURE.#{signed_body.to_json}"
       }
     end
 
@@ -78,17 +96,39 @@ module PrivateInstagramApi
     private
 
     def get_enc_password
-      decoded_public_key = Base64.decode64(@public_key_response.public_key)
-      cipher_aes = OpenSSL::Cipher.new('AES-256-GCM')
-      cipher_aes.encrypt
-      random_key = cipher_aes.random_key
-      iv = cipher_aes.random_iv
       time = Time.now.to_i.to_s
+      random_key = SecureRandom.bytes(32)
+      iv = SecureRandom.bytes(12)
+
+      decoded_public_key = Base64.decode64(@public_key_response.public_key)
       cipher_rsa = OpenSSL::PKey::RSA.new(decoded_public_key)
       enc_random_key = cipher_rsa.public_encrypt(random_key)
-      chipered_password = cipher_aes.update(@password.encode('utf-8')) + cipher.final
-      # cipher_aes.update(time.encode)
-      "#PWD_INSTAGRAM:4:#{time}:#{payload}"
+
+      cipher_aes = OpenSSL::Cipher.new('AES-256-GCM')
+      cipher_aes.encrypt
+      cipher_aes.key = random_key
+      cipher_aes.iv = iv
+      cipher_aes.auth_data = time.encode('utf-8')
+      cipher_text = cipher_aes.update(@password.encode('utf-8')) + cipher_aes.final
+      tag = cipher_aes.auth_tag
+
+      password_bytes = [1, @public_key_response.public_key_id.to_i].pack('c*') +
+        iv +
+        [enc_random_key.length].pack('c*') +
+        enc_random_key +
+        tag +
+        cipher_text
+
+      # how to decrypt
+      # decipher_aes = OpenSSL::Cipher.new('AES-256-GCM')
+      # decipher_aes.decrypt
+      # decipher_aes.key = random_key
+      # decipher_aes.iv = iv
+      # decipher_aes.auth_data = time.encode('utf-8')
+      # decipher_aes.auth_tag = tag
+      # decipher_text = decipher_aes.update(cipher_text) + decipher_aes.final
+
+      "#PWD_INSTAGRAM:4:#{time}:#{Base64.strict_encode64(password_bytes)}"
     end
   end
 end
