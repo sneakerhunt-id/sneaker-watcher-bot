@@ -16,7 +16,8 @@ module Service
             product_name = "#{product_properties[:subtitle]} #{product_properties[:title]}"
             product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
             product_release_time = product.dig(:productInfo)&.first&.dig(:launchView, :startEntryDate)
-            product_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
+            product_slug = product.dig(:publishedContent, :properties, :seo, :slug)
+            product_general_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
             product_out_of_stock = product.dig(:productInfo)&.first&.dig(:productContent, :outOfStock).present?
             product_url = "#{web_base_url}/t/#{product_slug}"
             product_sizes = []
@@ -38,17 +39,19 @@ module Service
               end
             end
 
-            next if product_out_of_stock ||
-              product_img.blank? ||
+            next if product_img.blank? ||
               product_name.blank? ||
+              product_out_of_stock ||
               !relevant_product?(product_name) ||
               product_release_time.blank? ||
               product_sizes.blank? ||
+              product_slug.blank? ||
               past_release?(product_release_time) ||
               !new_product?(product_slug)
             product_hash = {
               name: product_name,
               slug: product_slug,
+              general_slug: product_general_slug,
               url: product_url,
               image: product_img,
               release_time: product_release_time,
@@ -74,8 +77,8 @@ module Service
           fields = %w[
             active id lastFetchTime productInfo publishedContent.nodes publishedContent.subType publishedContent.properties.coverCard
             publishedContent.properties.productCard publishedContent.properties.products publishedContent.properties.publish.collections
-            publishedContent.properties.relatedThreads publishedContent.properties.threadType publishedContent.properties.custom
-            publishedContent.properties.title
+            publishedContent.properties.relatedThreads publishedContent.properties.seo publishedContent.properties.threadType
+            publishedContent.properties.custom publishedContent.properties.title
           ]
           params = {
             anchor: 0,
