@@ -38,16 +38,6 @@ module Service
                 index += 1
               end
             end
-
-            next if product_img.blank? ||
-              product_name.blank? ||
-              product_out_of_stock ||
-              !relevant_product?(product_name) ||
-              product_release_time.blank? ||
-              product_sizes.blank? ||
-              product_slug.blank? ||
-              past_release?(product_release_time) ||
-              !new_product?(product_slug)
             product_hash = {
               name: product_name,
               slug: product_slug,
@@ -57,6 +47,16 @@ module Service
               release_time: product_release_time,
               sizes: product_sizes
             }
+
+            next if product_img.blank? ||
+              product_name.blank? ||
+              product_out_of_stock ||
+              !relevant_product?(product_name) ||
+              product_release_time.blank? ||
+              product_sizes.blank? ||
+              product_slug.blank? ||
+              past_release?(product_release_time) ||
+              !new_product?(product_slug, product_hash)
             send_message(product_hash)
           end
         end
@@ -100,11 +100,14 @@ module Service
             .map(&:strip).map(&:downcase).compact
         end
 
-        def new_product?(identifier)
+        def new_product?(identifier, product_hash)
           key = redis_key(identifier)
           product_cache = SneakerWatcherBot.redis.get(key)
           return true if product_cache.blank?
-          SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
+          # update the content and expiry date
+          # to keep up with release time/content changes
+          # expire the cache at release time so restock can be properly detected
+          save_product_cache(product_hash)
           return false
         end
 
@@ -119,11 +122,18 @@ module Service
             "RELEASE TIME:\n#{Time.parse(product_hash[:release_time]).in_time_zone("Jakarta").strftime('%d %B %Y at %H:%M WIB')}\n\n"\
             "EARLY CHECKOUT LINK WILL BE PROVIDED #{ENV.fetch('NIKE_SNKRS_REMINDER_HOUR', 2)} HOURS PRIOR TO RELEASE!"
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
-          SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)
+          save_product_cache(product_hash)
         end
 
         def redis_key(identifier)
           "nike_snkrs_web_#{identifier.downcase}"
+        end
+
+        def save_product_cache(product_hash)
+          key = redis_key(product_hash[:slug])
+          SneakerWatcherBot.redis.set(key, product_hash.to_json)
+          redis_expiry = Time.parse(product_hash[:release_time])
+          SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
         end
 
         def api_base_url
