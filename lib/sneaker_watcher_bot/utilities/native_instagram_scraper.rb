@@ -136,7 +136,7 @@ class NativeInstagramScraper
 
   def request_header
     {
-      user_agent: 'Instagram 165.1.0.29.119 Android (26/8.0.0; 320dpi; 720x1468; samsung; SM-A102U; a10e; exynos7885; en_US; 239490550)',
+      user_agent: Helper::CommonHelper::USER_AGENT,
       'X-IG-App-Locale': 'en_US',
       'X-IG-Device-Locale': 'en_US',
       'X-IG-Mapped-Locale': 'en_US',

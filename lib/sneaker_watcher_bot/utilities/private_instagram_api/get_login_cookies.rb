@@ -17,9 +17,12 @@ module PrivateInstagramApi
           @public_key_response.device_id,
           @public_key_response.android_id
         ).perform
+
+        response = RestClient.post("#{base_url}/accounts/login/", request_body, request_headers)
+        cookie_hash = response.cookies.deep_symbolize_keys
         SneakerWatcherBot.redis.set(key, cookie_hash.to_json)
         SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
-        response.cookies
+        cookie_hash
       rescue => e
         log_object = {
           tags: self.class.name.underscore,
@@ -37,7 +40,7 @@ module PrivateInstagramApi
     end
   
     def redis_expiry
-      Time.now + (ENV['INSTAGRAM_CACHE_EXPIRY'] || 12).to_i.hours
+      Time.now + (ENV['NATIVE_INSTAGRAM_CACHE_EXPIRY'] || 2160).to_i.hours
     end
   
     def base_url
@@ -47,12 +50,12 @@ module PrivateInstagramApi
     def request_headers
       {
         cookies: cookies,
-        user_agent: 'Instagram 165.1.0.29.119 Android (26/8.0.0; 320dpi; 720x1468; samsung; SM-A102U; a10e; exynos7885; en_US; 239490550)',
+        user_agent: Helper::CommonHelper::USER_AGENT,
         'X-IG-App-Locale': 'en_US',
         'X-IG-Device-Locale': 'en_US',
         'X-IG-Mapped-Locale': 'en_US',
-        'X-IG-Device-ID': @csrf_token_response.device_id,
-        'X-IG-Android-ID': @csrf_token_response.android_id,
+        'X-IG-Device-ID': @public_key_response.device_id,
+        'X-IG-Android-ID': @public_key_response.android_id,
         'X-IG-App-ID': '567067343352427',
         'X-MID': @csrf_token_response.mid,
         'X-FB-HTTP-Engine': 'Liger',
@@ -64,13 +67,13 @@ module PrivateInstagramApi
 
     def request_body
       signed_body = {
-        jazoest: '22494',
+        jazoest: jazoest,
         country_codes: [{
           country_code: '1',
           source: %w[default]
-        }],
-        phone_id: 'e5234c43-f519-4748-9193-ffde9bbeee5e',
-        enc_password: get_enc_password,
+        }].to_json,
+        phone_id: @public_key_response.phone_id,
+        enc_password: enc_password,
         _csrftoken: @csrf_token_response.csrf_token,
         username: @username,
         adid: '',
@@ -95,7 +98,7 @@ module PrivateInstagramApi
 
     private
 
-    def get_enc_password
+    def enc_password
       time = Time.now.to_i.to_s
       random_key = SecureRandom.bytes(32)
       iv = SecureRandom.bytes(12)
@@ -112,23 +115,19 @@ module PrivateInstagramApi
       cipher_text = cipher_aes.update(@password.encode('utf-8')) + cipher_aes.final
       tag = cipher_aes.auth_tag
 
-      password_bytes = [1, @public_key_response.public_key_id.to_i].pack('c*') +
-        iv +
-        [enc_random_key.length].pack('c*') +
-        enc_random_key +
-        tag +
-        cipher_text
-
-      # how to decrypt
-      # decipher_aes = OpenSSL::Cipher.new('AES-256-GCM')
-      # decipher_aes.decrypt
-      # decipher_aes.key = random_key
-      # decipher_aes.iv = iv
-      # decipher_aes.auth_data = time.encode('utf-8')
-      # decipher_aes.auth_tag = tag
-      # decipher_text = decipher_aes.update(cipher_text) + decipher_aes.final
+      # total bytes should be 300
+      password_bytes = [1, @public_key_response.public_key_id.to_i].pack('c*') + # 2
+        iv + # 12
+        [enc_random_key.length].pack("s<") + # 2
+        enc_random_key + # 256
+        tag + # 16
+        cipher_text # 12
 
       "#PWD_INSTAGRAM:4:#{time}:#{Base64.strict_encode64(password_bytes)}"
+    end
+
+    def jazoest
+      '2' + @public_key_response.phone_id.bytes.sum.to_s
     end
   end
 end
