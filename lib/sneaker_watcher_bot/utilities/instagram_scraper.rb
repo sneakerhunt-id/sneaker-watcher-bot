@@ -5,7 +5,9 @@ class InstagramScraper
   INSTAGRAM_BASE_URL = 'https://www.instagram.com'
 
   def initialize
+    @toggle_native_instagram = ENV.fetch('TOGGLE_NATIVE_INSTAGRAM', 0).to_i
     set_instagram_account
+    return if @toggle_native_instagram == 1
     Selenium::WebDriver::Chrome.path = ENV['GOOGLE_CHROME_SHIM'] if ENV.fetch('GOOGLE_CHROME_SHIM', nil).present?
     @browser = Watir::Browser.new :chrome, args: %w[--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222]
   end
@@ -39,7 +41,7 @@ class InstagramScraper
       send_error_notification(e)
       raise
     ensure
-      @browser.close
+      @browser.close if @toggle_native_instagram == 0
     end
   end
 
@@ -59,6 +61,7 @@ class InstagramScraper
   end
 
   def get_cookies
+    return get_mobile_app_cookies if @toggle_native_instagram == 1
     key = redis_instagram_cookies_key(@username)
     raw_cookies = SneakerWatcherBot.redis.get(key)
     return JSON.parse(raw_cookies).deep_symbolize_keys if raw_cookies.present?
@@ -69,6 +72,10 @@ class InstagramScraper
     SneakerWatcherBot.redis.set(key, cookie_hash.to_json)
     SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
     cookie_hash
+  end
+
+  def get_mobile_app_cookies
+    PrivateInstagramApi::GetLoginCookies.new(@username, @password).perform
   end
 
   def reel_id(target_username, cookies)
