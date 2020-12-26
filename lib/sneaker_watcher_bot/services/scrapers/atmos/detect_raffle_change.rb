@@ -6,49 +6,77 @@ module Service
           60
         end
 
-        def initialize
-          @atmos_base_url = ENV['ATMOS_BASE_URL']
-        end
-
         def perform
-          new_hash = scrape_raffle
-          if is_new_product?(new_hash)
-            message = "<strong>ATMOS RAFFLE UPDATE DETECTED!</strong>\n"\
-              "#{new_hash[:name]}\n"\
-              "<a href='#{@atmos_base_url}#{new_hash[:url]}'>CHECK IT OUT!</a>"
-            TelegramBot.new.send_telegram_photo(message, new_hash[:image])
-            SneakerWatcherBot.redis.set(redis_key, new_hash.to_json)
-          end
-        end
+          response = RestClient.get("#{base_url}/collections/raffle/products.json")
+          raw_product_data = JSON.parse(response.body).deep_symbolize_keys
+          raw_product_data.dig(:products).take(10).each do |product|
+            begin
+              product_available = product[:variants].any? {|v| v[:available] == true }
+              product_url = "/collections/raffle/products/#{product[:handle]}"
+              product_name = product[:title]
+              product_img = product[:images]&.first&.dig(:src)
+              product_slug = product[:handle]
+              product_hash = {
+                slug: product_slug,
+                name: product_name,
+                url: product_url,
+                image: product_img
+              }
+              next if !product_available || # already sold out
+                !new_product?(product_hash) # already detected previously
 
-        def is_new_product?(new_hash)
-          @is_new_product ||= begin
-            latest_product_raffle_cache = SneakerWatcherBot.redis.get(redis_key)
-            return true if latest_product_raffle_cache.blank?
-            previous_hash = JSON.parse(latest_product_raffle_cache).deep_symbolize_keys
-            previous_hash != new_hash
+              send_message(product_hash)
+            rescue => e
+              log_object = {
+                tags: self.class.name.underscore,
+                message: e.message,
+                backtrace: e.backtrace.take(5),
+                instagram_username: @username
+              }
+              SneakerWatcherBot.logger.error(log_object)
+            end
           end
-        end
-
-        def scrape_raffle
-          response = RestClient.get("#{@atmos_base_url}/collections/raffle")
-          html = Nokogiri::HTML(response.body)
-          latest_product_grid = html.css('.product.grid-item').first
-          latest_product_url = latest_product_grid.elements.first.attributes['href'].value
-          latest_product_name = latest_product_grid.css('.product-title').first.inner_text
-          latest_product_img = latest_product_grid.xpath("//*[@id='panel']/section/div[2]/div[2]/div/div[1]/article/a/div[1]/img").first.attributes['src'].value
-          latest_product_img = "https:#{latest_product_img}"
-          {
-            name: latest_product_name,
-            url: latest_product_url,
-            image: latest_product_img
-          }
         end
 
         private
 
-        def redis_key
-          'atmos_latest_product_raffle'
+        def base_url
+          ENV['ATMOS_BASE_URL']
+        end
+
+        def redis_key(identifier)
+          "atmos_latest_product_raffle_#{identifier}"
+        end
+
+        def required_attributes?(product_hash)
+          # invalid if any of these attribute is blank
+          product_hash[:name].blank? || product_hash[:url].blank? || product_hash[:image].blank?
+        end
+
+        def whitelisted_products
+          @whitelisted_products ||= ENV['ATMOS_COLLECTIONS_WHITELISTED_PRODUCTS'].split(",")
+            .map(&:strip).map(&:downcase).compact
+        end
+
+        def new_product?(product_hash)
+          key = redis_key(product_hash[:slug])
+          product_cache = SneakerWatcherBot.redis.get(key)
+          return true if product_cache.blank?
+          SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
+          return false
+        end
+
+        def redis_expiry
+          Time.now + 8.hours
+        end
+
+        def send_message(product_hash)
+          message = "<strong>ATMOS RAFFLE UPDATE DETECTED!</strong>\n"\
+            "#{product_hash[:name]}\n"\
+            "<a href='#{base_url}#{product_hash[:url]}'>CHECK IT OUT!</a>"
+
+          TelegramBot.new.send_telegram_photo(message, product_hash[:image])
+          SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)
         end
       end
     end
