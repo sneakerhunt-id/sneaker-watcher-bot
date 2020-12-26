@@ -3,7 +3,7 @@ module Service
     module Atmos
       class DetectCollectionsChange < Base
         def self.interval_seconds
-          10
+          20
         end
 
         def perform
