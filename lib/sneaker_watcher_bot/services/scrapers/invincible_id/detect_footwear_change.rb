@@ -9,7 +9,7 @@ module Service
         def perform
           response = RestClient.get("#{base_url}/collections/footwear")
           html = Nokogiri::HTML(response.body)
-          html.css('.grid-view-item').take(10).each do |product|
+          html.css('.boost-pfs-filter-product-item-grid').take(10).each do |product|
             product_name = product.xpath(".//div[contains(@class, 'grid-view-item--desc-wrapper')]//a").first.inner_text.strip
             product_url = base_url + product.xpath(".//div[contains(@class, 'grid-view-item-image')]//a").first.attributes['href'].value
             product_slug = URI.parse(product_url).path.split('/').last
