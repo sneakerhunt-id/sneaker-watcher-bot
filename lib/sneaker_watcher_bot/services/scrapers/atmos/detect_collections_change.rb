@@ -4,7 +4,7 @@ module Service
     module Atmos
       class DetectCollectionsChange < Base
         def self.interval_seconds
-          3
+          5
         end
 
         def perform
@@ -20,7 +20,7 @@ module Service
         def scrape_collection_products(collection)
           response = RestClient.get("#{base_url}/collections/#{collection}/products.json")
           raw_product_data = JSON.parse(response.body).deep_symbolize_keys
-          raw_product_data.dig(:products).take(10).each do |product|
+          raw_product_data.dig(:products).take(8).each do |product|
             begin
               product_available = product[:variants].any? {|v| v[:available] == true }
               product_slug = product[:handle]
@@ -30,10 +30,11 @@ module Service
                 next
               end
 
-              product_url = "/collections/#{collection}/products/#{product[:handle]}"
               product_name = product[:title]
-              product_img = product[:images]&.first&.dig(:src)
+              next if !relevant_product?(product_name) # not relevant
 
+              product_url = "/collections/#{collection}/products/#{product[:handle]}"
+              product_img = product[:images]&.first&.dig(:src)
               product_hash = {
                 slug: product_slug,
                 name: product_name,
@@ -50,8 +51,7 @@ module Service
                 }
               end
 
-              next if !relevant_product?(product_name) || # not relevant
-                raffle?(product[:tags].join(',')) || # is a raffle
+              next if raffle?(product[:tags].join(',')) || # is a raffle
                 !need_notify?(product_hash) # if new product / new stock
 
               send_message(product_hash)
