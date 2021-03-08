@@ -1,4 +1,3 @@
-require 'pry'
 module Service
   module Scraper
     module Atmos
