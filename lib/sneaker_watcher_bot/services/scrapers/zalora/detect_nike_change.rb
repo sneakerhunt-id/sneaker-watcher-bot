@@ -3,7 +3,7 @@ module Service
     module Zalora
       class DetectNikeChange < Base
         def self.interval_seconds
-          5
+          10
         end
 
         def perform
