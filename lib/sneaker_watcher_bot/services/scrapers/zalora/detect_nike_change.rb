@@ -3,7 +3,7 @@ module Service
     module Zalora
       class DetectNikeChange < Base
         def self.interval_seconds
-          5
+          10
         end
 
         def perform
@@ -75,8 +75,9 @@ module Service
         def request_headers
           # TODO: create a user agent strings pool and randomized from there
           {
-            params: params,
-            user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Safari/605.1.15 Version/13.0.4'
+            params: params
+            # TODO: investigate Zalora banning mechanism
+            # user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Safari/605.1.15 Version/13.0.4'
           }
         end
 
