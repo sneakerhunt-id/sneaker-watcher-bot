@@ -2,6 +2,10 @@ module Service
   module Scraper
     module HoopsIndonesia
       class DetectJordansChange < Base
+        def self.interval_seconds
+          10
+        end
+
         def perform
           payload = {
             parent_id: '5', # BRAND

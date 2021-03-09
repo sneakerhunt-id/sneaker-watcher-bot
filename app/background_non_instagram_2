@@ -11,7 +11,7 @@ scraper_classes = [
   Service::Scraper::InvincibleId::DetectFootwearChange
 ]
 
-Service::Scraper::Base.descendants.each do |scraper_class|
+scraper_classes.each do |scraper_class|
   # skip instagram scrapers
   next if scraper_class.name.downcase =~ /instagram/
 

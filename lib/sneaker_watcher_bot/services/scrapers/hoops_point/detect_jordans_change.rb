@@ -2,6 +2,10 @@ module Service
   module Scraper
     module HoopsPoint
       class DetectJordansChange < Base
+        def self.interval_seconds
+          10
+        end
+
         def perform
           response = RestClient.get("#{base_url}/api/products/categories")
           parsed_body = JSON.parse(response.body).map(&:deep_symbolize_keys)

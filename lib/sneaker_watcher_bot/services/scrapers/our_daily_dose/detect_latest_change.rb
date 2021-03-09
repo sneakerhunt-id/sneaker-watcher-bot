@@ -2,6 +2,10 @@ module Service
   module Scraper
     module OurDailyDose
       class DetectLatestChange < Base
+        def self.interval_seconds
+          10
+        end
+
         def perform
           response = RestClient.get("#{base_url}/latest.html")
           html = Nokogiri::HTML(response.body)
