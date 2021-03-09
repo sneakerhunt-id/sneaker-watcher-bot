@@ -3,7 +3,14 @@
 
 require './lib/sneaker_watcher_bot'
 
-watir_classes =[]
+scraper_classes = [
+  Service::Scraper::Nike::DetectSnkrsChange,
+  Service::Scraper::Nike::DetectSnkrsReminder,
+  Service::Scraper::OurDailyDose::DetectLatestChange,
+  Service::Scraper::SeekIndonesia::DetectNewArrivalsChange,
+  Service::Scraper::Zalora::DetectNikeChange
+]
+
 Service::Scraper::Base.descendants.each do |scraper_class|
   # skip instagram scrapers
   next if scraper_class.name.downcase =~ /instagram/
