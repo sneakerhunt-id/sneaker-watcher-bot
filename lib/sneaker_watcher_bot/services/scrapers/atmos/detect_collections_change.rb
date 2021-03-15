@@ -3,7 +3,7 @@ module Service
     module Atmos
       class DetectCollectionsChange < Base
         def self.interval_seconds
-          4
+          (ENV['ATMOS_COLLECTIONS_INTERVAL_SECONDS'] || 3).to_i
         end
 
         def perform
@@ -17,7 +17,12 @@ module Service
         private
 
         def scrape_collection_products(collection)
-          response = RestClient.get("#{base_url}/collections/#{collection}/products.json")
+          atmos_collection_url = "#{base_url}/collections/#{collection}/products.json"
+          response = RestClient::Request.execute(
+            method: :get,
+            url: atmos_collection_url,
+            proxy: ::Proxy.rotating
+          )
           raw_product_data = JSON.parse(response.body).deep_symbolize_keys
           raw_product_data.dig(:products).take(8).each do |product|
             begin
