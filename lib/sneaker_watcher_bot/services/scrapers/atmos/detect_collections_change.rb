@@ -16,15 +16,24 @@ module Service
 
         private
 
+        def fetch_limit
+          (ENV['ATMOS_FETCH_LIMIT'] || 8).to_i
+        end
+
+        def params
+          { limit: fetch_limit }
+        end
+
         def scrape_collection_products(collection)
           atmos_collection_url = "#{base_url}/collections/#{collection}/products.json"
           response = RestClient::Request.execute(
             method: :get,
             url: atmos_collection_url,
+            headers: { params: params },
             proxy: ::Proxy.rotating
           )
           raw_product_data = JSON.parse(response.body).deep_symbolize_keys
-          raw_product_data.dig(:products).take(8).each do |product|
+          raw_product_data.dig(:products).take(fetch_limit).each do |product|
             begin
               product_available = product[:variants].any? {|v| v[:available] == true }
               product_slug = product[:handle]
