@@ -17,7 +17,7 @@ class Proxy
       proxy_cache = SneakerWatcherBot.redis.get(identifier)
       if proxy_cache.present?
         static_proxy_count = ::Proxy.static_proxy_pools.count
-        order_index = ::Proxy.static_proxy_pools.find_index { |proxy| proxy == proxy_cache }
+        order_index = ::Proxy.static_proxy_pools.find_index { |proxy| proxy == proxy_cache }.to_i
         order_index = (order_index+1) % static_proxy_count
         proxy_cache = ::Proxy.static_proxy_pools[order_index]
       else
