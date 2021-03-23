@@ -7,10 +7,21 @@ module Service
         end
 
         def perform
-          collections = ENV['ATMOS_COLLECTIONS'].split(',').map(&:strip).compact
+          begin
+            collections = ENV['ATMOS_COLLECTIONS'].split(',').map(&:strip).compact
 
-          collections.each do |collection|
-            scrape_collection_products(collection)
+            collections.each do |collection|
+              scrape_collection_products(collection)
+            end
+          rescue => e
+            proxy = ::Proxy.rotate_static_proxy(proxy_key)
+            log_object = {
+              tags: self.class.name.underscore,
+              message: "Rotate static proxy of #{proxy_key} because of error: #{e.message}",
+              proxy: proxy
+            }
+            SneakerWatcherBot.logger.info(log_object)
+            raise
           end
         end
 
@@ -30,7 +41,7 @@ module Service
             method: :get,
             url: atmos_collection_url,
             headers: { params: params },
-            proxy: ::Proxy.rotating
+            proxy: ::Proxy.get_current_static_proxy(proxy_key)
           )
           raw_product_data = JSON.parse(response.body).deep_symbolize_keys
           raw_product_data.dig(:products).take(fetch_limit).each do |product|
@@ -82,6 +93,10 @@ module Service
 
         def base_url
           ENV['ATMOS_BASE_URL']
+        end
+
+        def proxy_key
+          'atmos_proxy'
         end
 
         def redis_key(identifier)
