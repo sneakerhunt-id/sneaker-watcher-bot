@@ -7,21 +7,10 @@ module Service
         end
 
         def perform
-          begin
-            collections = ENV['ATMOS_COLLECTIONS'].split(',').map(&:strip).compact
+          collections = ENV['ATMOS_COLLECTIONS'].split(',').map(&:strip).compact
 
-            collections.each do |collection|
-              scrape_collection_products(collection)
-            end
-          rescue => e
-            proxy = ::Proxy.rotate_static_proxy(proxy_key)
-            log_object = {
-              tags: self.class.name.underscore,
-              message: "Rotate static proxy of #{proxy_key} because of error: #{e.message}",
-              proxy: proxy
-            }
-            SneakerWatcherBot.logger.info(log_object)
-            raise
+          collections.each do |collection|
+            scrape_collection_products(collection)
           end
         end
 
@@ -36,13 +25,26 @@ module Service
         end
 
         def scrape_collection_products(collection)
-          atmos_collection_url = "#{base_url}/collections/#{collection}/products.json"
-          response = RestClient::Request.execute(
-            method: :get,
-            url: atmos_collection_url,
-            headers: { params: params },
-            proxy: ::Proxy.get_current_static_proxy(proxy_key)
-          )
+          collection_url = "#{base_url}/collections/#{collection}/products.json"
+
+          begin
+            response = RestClient::Request.execute(
+              method: :get,
+              url: collection_url,
+              headers: { params: params },
+              proxy: ::Proxy.get_current_static_proxy(proxy_key)
+            )
+          rescue => e
+            proxy = ::Proxy.rotate_static_proxy(proxy_key)
+            log_object = {
+              tags: self.class.name.underscore,
+              message: "Rotate static proxy of #{proxy_key} because of error: #{e.message}",
+              proxy: proxy
+            }
+            SneakerWatcherBot.logger.info(log_object)
+            raise
+          end
+
           raw_product_data = JSON.parse(response.body).deep_symbolize_keys
           raw_product_data.dig(:products).take(fetch_limit).each do |product|
             begin
