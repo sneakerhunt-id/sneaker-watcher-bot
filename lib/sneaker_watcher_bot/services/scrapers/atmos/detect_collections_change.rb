@@ -32,7 +32,9 @@ module Service
               method: :get,
               url: collection_url,
               headers: { params: params },
-              proxy: ::Proxy.get_current_static_proxy(proxy_key)
+              proxy: ::Proxy.get_current_static_proxy(proxy_key),
+              timeout: 10,
+              open_timeout: 10
             )
           rescue => e
             proxy = ::Proxy.rotate_static_proxy(proxy_key)
