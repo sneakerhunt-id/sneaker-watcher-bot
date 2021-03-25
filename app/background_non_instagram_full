@@ -8,7 +8,7 @@ scraper_classes = [
   Service::Scraper::Atmos::DetectRaffleChange,
   Service::Scraper::HoopsIndonesia::DetectJordansChange,
   Service::Scraper::HoopsPoint::DetectJordansChange,
-  Service::Scraper::InvincibleId::DetectFootwearChange,
+  Service::Scraper::InvincibleId::DetectCollectionsChange,
   Service::Scraper::Nike::DetectSnkrsChange,
   Service::Scraper::Nike::DetectSnkrsReminder,
   Service::Scraper::OurDailyDose::DetectLatestChange,

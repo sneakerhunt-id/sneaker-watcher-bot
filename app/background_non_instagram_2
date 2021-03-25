@@ -8,7 +8,7 @@ scraper_classes = [
   Service::Scraper::Atmos::DetectRaffleChange,
   Service::Scraper::HoopsIndonesia::DetectJordansChange,
   Service::Scraper::HoopsPoint::DetectJordansChange,
-  Service::Scraper::InvincibleId::DetectFootwearChange
+  Service::Scraper::InvincibleId::DetectCollectionsChange
 ]
 
 scraper_classes.each do |scraper_class|
