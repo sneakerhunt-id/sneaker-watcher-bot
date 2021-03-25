@@ -1,5 +1,5 @@
 module ShopifyHelper
-  def scrape_collection_products(prefix, base_url, collection, fetch_limit, redis_expiry)
+  def scrape_collection_products(prefix, base_url, collection, fetch_limit, redis_expiry, variant_size = :option1)
     collection_url = "#{base_url}/collections/#{collection}/products.json"
     proxy_key = "#{prefix}_proxy"
 
@@ -51,7 +51,7 @@ module ShopifyHelper
           next if !variant[:available]
           product_hash[:sizes] << {
             id: variant[:id],
-            title: variant[:option1]
+            title: variant[variant_size]
           }
         end
 
