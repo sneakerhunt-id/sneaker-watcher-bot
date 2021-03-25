@@ -8,7 +8,7 @@ class Proxy
     end
 
     def static_proxy_pools
-      ENV['STATIC_PROXY_POOLS'].split(',').map(&:strip).compact
+      ENV['STATIC_PROXY_POOLS']&.split(',')&.map(&:strip).compact
     end
 
     def rotate_static_proxy(identifier)
