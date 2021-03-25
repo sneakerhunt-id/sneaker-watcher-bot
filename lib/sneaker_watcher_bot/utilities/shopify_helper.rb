@@ -1,5 +1,5 @@
 module ShopifyHelper
-  def scrape_collection_products(prefix, base_url, collection, fetch_limit)
+  def scrape_collection_products(prefix, base_url, collection, fetch_limit, redis_expiry)
     collection_url = "#{base_url}/collections/#{collection}/products.json"
     proxy_key = "#{prefix}_proxy"
 
@@ -56,9 +56,9 @@ module ShopifyHelper
         end
 
         next if raffle?(product[:tags].join(',')) || # is a raffle
-          !need_notify?(prefix, product_hash) # if new product / new stock
+          !need_notify?(prefix, product_hash, redis_expiry) # if new product / new stock
 
-        send_message(prefix, product_hash)
+        send_message(prefix, product_hash, redis_expiry)
       rescue => e
         log_object = {
           tags: self.class.name.underscore,
@@ -71,7 +71,7 @@ module ShopifyHelper
     end
   end
 
-  def need_notify?(prefix, product_hash)
+  def need_notify?(prefix, product_hash, redis_expiry)
     # check if there's any existing cache yet
     key = redis_key(prefix, product_hash[:slug])
     product_cache = SneakerWatcherBot.redis.get(key)
@@ -92,7 +92,7 @@ module ShopifyHelper
     SneakerWatcherBot.redis.del(redis_key(prefix, identifier))
   end
 
-  def send_message(prefix, product_hash)
+  def send_message(prefix, product_hash, redis_expiry)
     message = "<strong>#{prefix.humanize.upcase} COLLECTIONS UPDATE DETECTED!</strong>\n"\
       "#{product_hash[:name]}\n"\
       "<a href='#{base_url}#{product_hash[:url]}'>CHECK IT OUT!</a>"

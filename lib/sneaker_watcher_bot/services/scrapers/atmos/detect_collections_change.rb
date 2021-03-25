@@ -10,7 +10,7 @@ module Service
 
         def perform
           collections.each do |collection|
-            scrape_collection_products(prefix, base_url, collection, fetch_limit)
+            scrape_collection_products(prefix, base_url, collection, fetch_limit, redis_expiry)
           end
         end
 
