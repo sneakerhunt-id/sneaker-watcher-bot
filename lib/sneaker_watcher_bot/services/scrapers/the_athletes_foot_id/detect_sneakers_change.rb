@@ -19,7 +19,7 @@ module Service
           parsed_body = JSON.parse(response.body).deep_symbolize_keys
           products = parsed_body.dig(:data)&.first&.dig(:products)&.take(10)
           products.each do |product|
-            product_id = product[:id]
+            product_id = product[:productCode]
             product_url = "#{base_url}#{product[:pageUrl]}"
             product_name = product[:productName]
             product_img = product[:images].first
