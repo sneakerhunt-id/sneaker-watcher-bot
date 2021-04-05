@@ -13,6 +13,7 @@ scraper_classes = [
   Service::Scraper::Nike::DetectSnkrsReminder,
   Service::Scraper::OurDailyDose::DetectLatestChange,
   Service::Scraper::SeekIndonesia::DetectNewArrivalsChange,
+  Service::Scraper::TheAthletesFootId::DetectSneakersChange,
   Service::Scraper::Zalora::DetectNikeChange
 ]
 
