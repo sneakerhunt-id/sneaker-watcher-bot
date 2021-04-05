@@ -3,7 +3,7 @@ module Service
     module TheAthletesFootId
       class DetectSneakersChange < Base
         def self.interval_seconds
-          4
+          3
         end
 
         def perform
