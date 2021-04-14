@@ -16,7 +16,8 @@ module Service
             product_name = "#{product_properties[:subtitle]} #{product_properties[:title]}"
             product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
             product_release_time = product.dig(:productInfo)&.first&.dig(:launchView, :startEntryDate)
-            product_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
+            product_slug = product.dig(:publishedContent, :properties, :seo, :slug)
+            product_general_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
             product_out_of_stock = product.dig(:productInfo)&.first&.dig(:productContent, :outOfStock).present?
             product_url = "#{web_base_url}/t/#{product_slug}"
             product_sizes = []
@@ -37,23 +38,25 @@ module Service
                 index += 1
               end
             end
-
-            next if product_out_of_stock ||
-              product_img.blank? ||
-              product_name.blank? ||
-              !relevant_product?(product_name) ||
-              product_release_time.blank? ||
-              product_sizes.blank? ||
-              past_release?(product_release_time) ||
-              !new_product?(product_slug)
             product_hash = {
               name: product_name,
               slug: product_slug,
+              general_slug: product_general_slug,
               url: product_url,
               image: product_img,
               release_time: product_release_time,
               sizes: product_sizes
             }
+
+            next if product_img.blank? ||
+              product_name.blank? ||
+              product_out_of_stock ||
+              !relevant_product?(product_name) ||
+              product_release_time.blank? ||
+              product_sizes.blank? ||
+              product_slug.blank? ||
+              past_release?(product_release_time) ||
+              !new_product?(product_slug, product_hash)
             send_message(product_hash)
           end
         end
@@ -74,8 +77,8 @@ module Service
           fields = %w[
             active id lastFetchTime productInfo publishedContent.nodes publishedContent.subType publishedContent.properties.coverCard
             publishedContent.properties.productCard publishedContent.properties.products publishedContent.properties.publish.collections
-            publishedContent.properties.relatedThreads publishedContent.properties.threadType publishedContent.properties.custom
-            publishedContent.properties.title
+            publishedContent.properties.relatedThreads publishedContent.properties.seo publishedContent.properties.threadType
+            publishedContent.properties.custom publishedContent.properties.title
           ]
           params = {
             anchor: 0,
@@ -97,11 +100,14 @@ module Service
             .map(&:strip).map(&:downcase).compact
         end
 
-        def new_product?(identifier)
+        def new_product?(identifier, product_hash)
           key = redis_key(identifier)
           product_cache = SneakerWatcherBot.redis.get(key)
           return true if product_cache.blank?
-          SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
+          # update the content and expiry date
+          # to keep up with release time/content changes
+          # expire the cache at release time so restock can be properly detected
+          save_product_cache(product_hash)
           return false
         end
 
@@ -116,11 +122,18 @@ module Service
             "RELEASE TIME:\n#{Time.parse(product_hash[:release_time]).in_time_zone("Jakarta").strftime('%d %B %Y at %H:%M WIB')}\n\n"\
             "EARLY CHECKOUT LINK WILL BE PROVIDED #{ENV.fetch('NIKE_SNKRS_REMINDER_HOUR', 2)} HOURS PRIOR TO RELEASE!"
           TelegramBot.new.send_telegram_photo(message, product_hash[:image])
-          SneakerWatcherBot.redis.set(redis_key(product_hash[:slug]), product_hash.to_json)
+          save_product_cache(product_hash)
         end
 
         def redis_key(identifier)
           "nike_snkrs_web_#{identifier.downcase}"
+        end
+
+        def save_product_cache(product_hash)
+          key = redis_key(product_hash[:slug])
+          SneakerWatcherBot.redis.set(key, product_hash.to_json)
+          redis_expiry = Time.parse(product_hash[:release_time])
+          SneakerWatcherBot.redis.expireat(key, redis_expiry.to_i)
         end
 
         def api_base_url

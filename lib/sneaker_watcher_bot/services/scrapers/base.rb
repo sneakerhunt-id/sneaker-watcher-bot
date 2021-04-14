@@ -8,7 +8,7 @@ module Service
       end
 
       def raffle?(product_url)
-        is_raffle = product_url =~ /raffle/
+        is_raffle = product_url.downcase =~ /raffle/
         is_raffle.present?
       end
 
