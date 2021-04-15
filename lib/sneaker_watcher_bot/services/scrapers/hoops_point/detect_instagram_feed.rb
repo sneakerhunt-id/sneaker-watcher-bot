@@ -10,7 +10,7 @@ module Service
 
         def perform
           username, password = set_instagram_account
-          feeds = scrape_feeds(target_instagram_username, username, password, 6)
+          feeds = scrape_feeds(target_instagram_username, username, password)
           feeds.each do |feed|
             if fcfs?(feed[:text])
               message_title = "FCFS"
