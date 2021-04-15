@@ -5,7 +5,13 @@ module Service
         include ::InstagramHelper
 
         def self.interval_seconds
-          (ENV['HOOPS_POINT_INSTAGRAM_FEED_INTERVAL_SECONDS'] || 10).to_i
+          passive_interval = 60
+          active_interval = (ENV['HOOPS_POINT_INSTAGRAM_FEED_INTERVAL_SECONDS'] || 6).to_i
+          active_minutes = [58, 59, 00, 01, 28, 29, 30, 31]
+          now = DateTime.now
+          # return tight interval only on active minutes
+          return active_interval if active_minutes.include? now.minute
+          passive_interval
         end
 
         def perform
