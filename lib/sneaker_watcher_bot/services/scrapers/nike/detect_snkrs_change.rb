@@ -50,7 +50,7 @@ module Service
 
             next if product_img.blank? ||
               product_name.blank? ||
-              product_out_of_stock ||
+              # product_out_of_stock || # commented bcs is ok if out of stock before launch
               !relevant_product?(product_name) ||
               product_release_time.blank? ||
               product_sizes.blank? ||
