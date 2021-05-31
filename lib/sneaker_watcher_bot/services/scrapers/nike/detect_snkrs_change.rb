@@ -14,7 +14,7 @@ module Service
             product_properties = product.dig(:publishedContent, :nodes)&.first&.dig(:properties)
             product_id = product_properties.dig(:actions)&.find {|a| a[:actionType] == 'cta_buying_tools'}&.dig(:product, :productId)
             product_name = "#{product_properties[:subtitle]} #{product_properties[:title]}"
-            product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :portraitURL)
+            product_img = product.dig(:publishedContent, :properties, :coverCard, :properties, :squarishURL)
             product_release_time = product.dig(:productInfo)&.first&.dig(:launchView, :startEntryDate)
             product_slug = product.dig(:publishedContent, :properties, :seo, :slug)
             product_general_slug = product.dig(:productInfo)&.first&.dig(:productContent, :slug)
