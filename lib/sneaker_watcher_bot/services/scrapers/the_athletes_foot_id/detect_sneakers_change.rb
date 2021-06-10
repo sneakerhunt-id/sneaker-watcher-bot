@@ -42,6 +42,7 @@ module Service
             params: {
               sc: '4131e652-efdc-38e5-8368-ae046e364262',
               sort: 'listtime_desc',
+              sortCode: 'listtime_desc',
               nid: '6494',
               pr: '629300-3119200'
             }
