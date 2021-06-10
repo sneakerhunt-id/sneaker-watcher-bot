@@ -7,7 +7,15 @@ module Service
         end
 
         def perform
-          response = RestClient.get("#{api_base_url}/product_feed/threads/v2", request_headers)
+          url = "#{api_base_url}/product_feed/threads/v2"
+          response = RestClient::Request.execute(
+            method: :get,
+            url: url,
+            headers: request_headers,
+            proxy: ::Proxy.get_current_static_proxy(proxy_key),
+            timeout: 20,
+            open_timeout: 20
+          )
           parsed_body = JSON.parse(response.body).deep_symbolize_keys
           products = parsed_body.dig(:objects)
           products&.each do |product|
@@ -113,6 +121,10 @@ module Service
 
         def redis_expiry
           Time.now + 24.hours
+        end
+
+        def proxy_key
+          'nike_snkrs_proxy'
         end
 
         def send_message(product_hash)
