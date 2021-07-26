@@ -12,7 +12,7 @@ module Service
             method: :get,
             url: url,
             headers: request_headers,
-            proxy: ::Proxy.get_current_static_proxy(proxy_key),
+            # proxy: ::Proxy.get_current_static_proxy(proxy_key),
             timeout: 8,
             open_timeout: 8
           )
