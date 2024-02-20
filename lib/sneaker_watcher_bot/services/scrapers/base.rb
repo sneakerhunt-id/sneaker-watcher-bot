@@ -7,9 +7,14 @@ module Service
         url.split('/').last == URI.parse(url).host
       end
 
-      def raffle?(product_url)
-        is_raffle = product_url.downcase =~ /raffle/
-        is_raffle.present?
+      def raffle?(text)
+        find_text = text.downcase =~ /raffle/
+        find_text.present?
+      end
+
+      def fcfs?(text)
+        find_text = text.downcase =~ /fcfs|first come first serve/
+        find_text.present?
       end
 
       def whitelisted_products
